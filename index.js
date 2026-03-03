@@ -155,7 +155,7 @@ client.on("messageCreate", async (message) => {
   if (command === "giveaway") {
 
   // Only Espadas can start
-  if (!message.member.roles.cache.has(1475606720356290581)) {
+  if (!message.member.roles.cache.has(ESPADA_PARENT_ROLE_ID)) {
     return message.reply("Only Espadas can start a giveaway.");
   }
 
