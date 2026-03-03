@@ -153,32 +153,70 @@ client.on("messageCreate", async (message) => {
   // Giveaway Command
   /////////////////////////
   if (command === "giveaway") {
-    if (!message.member.roles.cache.has(1475606720356290581)) return message.reply("Only Espadas can start a giveaway.");
 
-    const timeArg = args[0];
-    const winnerCount = parseInt(args[1]);
-    const prize = args.slice(2).join(" ");
-    if (!timeArg || isNaN(winnerCount) || !prize) return message.reply("Usage: sggiveaway <time> <winner count> <prize>");
-
-    let duration;
-    if (timeArg.endsWith("m")) duration = parseInt(timeArg) * 60000;
-    else if (timeArg.endsWith("h")) duration = parseInt(timeArg) * 60 * 60000;
-    else return message.reply("Time must end with m (minutes) or h (hours).");
-
-    const giveawayMessage = await message.channel.send(`🎉 **GIVEAWAY** 🎉\nPrize: **${prize}**\nWinners: **${winnerCount}**\nEnds in: **${timeArg}**\nReact with 🎉 to enter!`);
-    await giveawayMessage.react("🎉");
-
-    setTimeout(async () => {
-      const fetchedMessage = await message.channel.messages.fetch(giveawayMessage.id);
-      const reaction = fetchedMessage.reactions.cache.get("🎉");
-      if (!reaction) return;
-      const users = (await reaction.users.fetch()).filter(u => !u.bot).map(u => u);
-      if (users.length === 0) return message.channel.send("No valid entries. Giveaway cancelled.");
-      const winners = [];
-      for (let i = 0; i < winnerCount; i++) winners.push(users[Math.floor(Math.random() * users.length)]);
-      message.channel.send(`🎊 Congratulations ${winners.map(w => `<@${w.id}>`).join(", ")}!\nYou won **${prize}**!`);
-    }, duration);
+  // Only Espadas can start
+  if (!message.member.roles.cache.has(ESPADA_PARENT_ROLE_ID)) {
+    return message.reply("Only Espadas can start a giveaway.");
   }
+
+  const timeArg = args[0];
+  const winnerCount = parseInt(args[1]);
+  const prize = args.slice(2).join(" ");
+
+  if (!timeArg || isNaN(winnerCount) || !prize) {
+    return message.reply("Usage: sggiveaway <time> <winner count> <prize>");
+  }
+
+  // Handle duration
+  let duration;
+  if (timeArg.endsWith("m")) {
+    duration = parseInt(timeArg) * 60000; // minutes
+  } else if (timeArg.endsWith("h")) {
+    duration = parseInt(timeArg) * 60 * 60000; // hours
+  } else if (timeArg.endsWith("d")) {
+    duration = parseInt(timeArg) * 24 * 60 * 60000; // days
+  } else {
+    return message.reply("Time must end with m (minutes), h (hours), or d (days).");
+  }
+
+  // Send giveaway message
+  const giveawayMessage = await message.channel.send(
+    `🎉 **GIVEAWAY** 🎉\n\nPrize: **${prize}**\nWinners: **${winnerCount}**\nEnds in: **${timeArg}**\n\nReact with 🎉 to enter!`
+  );
+
+  await giveawayMessage.react(":tada:");
+
+    // Timer for ending giveaway
+  setTimeout(async () => {
+    let fetchedMessage;
+    try {
+      fetchedMessage = await message.channel.messages.fetch(giveawayMessage.id);
+    } catch {
+      return message.channel.send("Could not fetch the giveaway message.");
+    }
+
+    const reaction = fetchedMessage.reactions.cache.get(":tada:");
+    if (!reaction) return message.channel.send("No one entered the giveaway.");
+
+    const users = await reaction.users.fetch();
+    const validUsers = users.filter(u => !u.bot).map(u => u);
+
+    if (validUsers.length === 0) {
+      return message.channel.send("No valid entries. Giveaway cancelled.");
+    }
+
+    const winners = [];
+    for (let i = 0; i < winnerCount; i++) {
+      const random = validUsers[Math.floor(Math.random() * validUsers.length)];
+      winners.push(random);
+    }
+
+    message.channel.send(
+      `🎊 Congratulations ${winners.map(w => `<@${w.id}>`).join(", ")}!\nYou won **${prize}**!`
+    );
+
+  }, duration);
+}
 
   /////////////////////////
   // Souls Balance & Shop
