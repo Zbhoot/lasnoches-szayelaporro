@@ -153,7 +153,7 @@ client.on("messageCreate", async (message) => {
   // Giveaway Command
   /////////////////////////
   if (command === "giveaway") {
-    if (!message.member.roles.cache.has(ESPADA_PARENT_ROLE_ID)) return message.reply("Only Espadas can start a giveaway.");
+    if (!message.member.roles.cache.has(1475606720356290581)) return message.reply("Only Espadas can start a giveaway.");
 
     const timeArg = args[0];
     const winnerCount = parseInt(args[1]);
