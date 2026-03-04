@@ -1,5 +1,5 @@
 // ============================
-//       LAS NOCHES BOT
+//       HUECO MUNDO BOT
 // ============================
 
 const { Client, GatewayIntentBits } = require("discord.js");
@@ -23,7 +23,6 @@ let wins = {};
 let warns = {};
 let cooldowns = new Map();
 
-// Load JSONs if they exist
 if (fs.existsSync("./inventory.json")) inventory = JSON.parse(fs.readFileSync("./inventory.json"));
 if (fs.existsSync("./souls.json")) souls = JSON.parse(fs.readFileSync("./souls.json"));
 if (fs.existsSync("./wins.json")) wins = JSON.parse(fs.readFileSync("./wins.json"));
@@ -50,6 +49,7 @@ const ESPADA_ROLE_IDS = [
   "1476123850000306176"
 ];
 const COOLDOWN_TIME = 24*60*60*1000; // 1 day cooldown
+const SOUL_EMOJI = "<:soul:1476731494868455565>";
 
 // ============================
 //       MESSAGE CREATE
@@ -157,7 +157,7 @@ client.on("messageCreate", async (message) => {
     if (!espadaRole || !challenger) return message.reply("Usage: sgdefeat <EspadaRole> <Challenger>");
     souls[userId] = (souls[userId]||0)+200;
     saveSouls();
-    message.reply(`${message.author.tag} defeated ${challenger.user.tag}! Awarded 200 Souls.`);
+    message.reply(`${message.author.tag} defeated ${challenger.user.tag}! Awarded 200${SOUL_EMOJI}.`);
   }
 
   // ============================
@@ -165,20 +165,20 @@ client.on("messageCreate", async (message) => {
   // ============================
   if (command==="shop") return message.reply(`
 :shopping_cart: Soul Shop
-:one: challengepass - 1000 Souls
-:two: customrole - 3000 Souls
+:one: challengepass - 1000${SOUL_EMOJI}
+:two: customrole - 3000${SOUL_EMOJI}
 `);
   if (command==="buy"){
     const item=args[0];
     if (item==="challengepass"){
-      if (souls[userId]<1000) return message.reply("Not enough Souls.");
+      if (souls[userId]<1000) return message.reply(`Not enough ${SOUL_EMOJI}.`);
       souls[userId]-=1000; inventory[userId].challengepass+=1; saveSouls(); saveInventory();
-      return message.reply("Bought 1 Challenge Pass.");
+      return message.reply(`Bought 1 Challenge Pass for 1000${SOUL_EMOJI}.`);
     }
     if (item==="customrole"){
-      if (souls[userId]<3000) return message.reply("Not enough Souls.");
+      if (souls[userId]<3000) return message.reply(`Not enough ${SOUL_EMOJI}.`);
       souls[userId]-=3000; inventory[userId].customrole+=1; saveSouls(); saveInventory();
-      return message.reply("Bought 1 Custom Role.");
+      return message.reply(`Bought 1 Custom Role for 3000${SOUL_EMOJI}.`);
     }
   }
   if (command==="inventory") return message.reply(`Inventory:
@@ -229,6 +229,14 @@ Custom Roles: ${inventory[userId].customrole}`);
       reply+=`${member.user.tag} - ${count} wins\n`;
     }
     message.channel.send(reply);
+  }
+
+  // ============================
+  // BALANCE CHECK
+  // ============================
+  if (command==="balance"){
+    if (!souls[userId]) souls[userId]=0;
+    message.reply(`You have **${souls[userId]}${SOUL_EMOJI}**`);
   }
 
 });
