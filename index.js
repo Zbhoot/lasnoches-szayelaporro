@@ -385,6 +385,154 @@ client.on("messageCreate", async (message) => {
     `🛡️ ${espadaHolder.user.tag} defeated ${challenger.user.tag} and earned 200 Souls!`
   );
   }
+
+  const fs = require("fs");
+
+// ===== Warns JSON =====
+let warns = {};
+if (fs.existsSync("./warns.json")) {
+  warns = JSON.parse(fs.readFileSync("./warns.json"));
+}
+
+function saveWarns() {
+  fs.writeFileSync("./warns.json", JSON.stringify(warns, null, 2));
+}
+
+// ===== Offensive words list =====
+const offensiveWords = [
+  // Rape variations
+  "r*pe","r4p3","rape","r a p e","r.a.p.e","r@pe","raep","r4p","r@p3",
+  // N-word variations
+  "n**ga","nga","nihga","nugga","n1gga","n1ga","n!gga","n!ga",
+  "n-i-g-g-a","niqqa","niggah","n!qq@","n1qq@","n1q@","niqq@","n!q@"
+];
+
+// ===== Moderation & Auto-Mute =====
+client.on("messageCreate", async (message) => {
+  if (message.author.bot) return;
+
+  const prefix = "sg";
+  const args = message.content.slice(prefix.length).trim().split(/ +/);
+  const command = args.shift()?.toLowerCase();
+  const modRoleId = "1475606720356290581"; // Espada role
+
+  // ===== AUTO MUTE + WARN FOR OFFENSIVE WORDS =====
+  const msgLower = message.content.toLowerCase().replace(/\s/g, "");
+  const matchedWords = offensiveWords.filter(word => msgLower.includes(word.replace(/\*/g,"")));
+  if (matchedWords.length > 0) {
+    const userId = message.author.id;
+    if (!warns[userId]) warns[userId] = { count: 0, reasons: [] };
+
+    // Add a warning for each matched word
+    matchedWords.forEach(word => {
+      warns[userId].count += 1;
+      warns[userId].reasons.push(`Auto-mute for saying "${word}"`);
+    });
+    saveWarns();
+
+    // Mute for 1 min
+    let mutedRole = message.guild.roles.cache.find(r => r.name === "Muted");
+    if (!mutedRole)
+      mutedRole = await message.guild.roles.create({ name: "Muted", permissions: [] });
+
+    message.member.roles.add(mutedRole).catch(() => {});
+    message.channel.send(`${message.author.tag} got auto-muted for 1 minute for saying: ${matchedWords.join(", ")}. Warning added.`);
+
+    setTimeout(() => {
+      message.member.roles.remove(mutedRole).catch(() => {});
+      message.channel.send(`${message.author.tag} is now unmuted.`);
+    }, 60 * 1000);
+
+    return; // Stop processing further commands
+  }
+
+  // ===== Moderation Commands =====
+  if (
+    ["kick","ban","mute","unmute","clear","warn","sgwarnings"].includes(command) &&
+    !message.member.roles.cache.has(modRoleId)
+  ) return message.reply("Only Espadas can use moderation commands.");
+
+  // ===== Kick =====
+  if (command === "kick") {
+    const member = message.mentions.members.first();
+    const reason = args.slice(1).join(" ") || "No reason provided";
+    if (!member) return message.reply("Mention a user to kick.");
+    if (member.roles.cache.has(modRoleId)) return message.reply("Cannot kick another Espada.");
+    member.kick(reason).catch(() => {});
+    return message.reply(`${member.user.tag} was kicked. Reason: ${reason}`);
+  }
+
+  // ===== Ban =====
+  if (command === "ban") {
+    const member = message.mentions.members.first();
+    const reason = args.slice(1).join(" ") || "No reason provided";
+    if (!member) return message.reply("Mention a user to ban.");
+    if (member.roles.cache.has(modRoleId)) return message.reply("Cannot ban another Espada.");
+    member.ban({ reason }).catch(() => {});
+    return message.reply(`${member.user.tag} was banned. Reason: ${reason}`);
+  }
+
+  // ===== Mute =====
+  if (command === "mute") {
+    const member = message.mentions.members.first();
+    const time = args[1] ? parseInt(args[1]) * 60 * 1000 : null;
+    if (!member) return message.reply("Mention a user to mute.");
+    let mutedRole = message.guild.roles.cache.find(r => r.name === "Muted");
+    if (!mutedRole)
+      mutedRole = await message.guild.roles.create({ name: "Muted", permissions: [] });
+    member.roles.add(mutedRole).catch(() => {});
+    message.reply(`${member.user.tag} was muted${time ? ` for ${args[1]} minutes` : ""}.`);
+    if (time) {
+      setTimeout(() => {
+        member.roles.remove(mutedRole).catch(() => {});
+        message.channel.send(`${member.user.tag} is now unmuted.`);
+      }, time);
+    }
+  }
+
+  // ===== Unmute =====
+  if (command === "unmute") {
+    const member = message.mentions.members.first();
+    if (!member) return message.reply("Mention a user to unmute.");
+    const mutedRole = message.guild.roles.cache.find(r => r.name === "Muted");
+    if (mutedRole) member.roles.remove(mutedRole).catch(() => {});
+    message.reply(`${member.user.tag} has been unmuted.`);
+  }
+
+  // ===== Clear / Purge Messages =====
+  if (command === "clear") {
+    const count = parseInt(args[0]);
+    if (isNaN(count)) return message.reply("Specify number of messages to clear.");
+    message.channel.bulkDelete(count + 1, true).catch(() => {});
+    message.reply(`Cleared ${count} messages.`).then(msg => {
+      setTimeout(() => msg.delete().catch(() => {}), 3000);
+    });
+  }
+
+  // ===== Warn =====
+  if (command === "warn") {
+    const member = message.mentions.members.first();
+    const reason = args.slice(1).join(" ") || "No reason provided";
+    if (!member) return message.reply("Mention a user to warn.");
+    if (!warns[member.id]) warns[member.id] = { count: 0, reasons: [] };
+    warns[member.id].count += 1;
+    warns[member.id].reasons.push(reason);
+    saveWarns();
+    return message.reply(`${member.user.tag} has been warned. Reason: ${reason}. Total warnings: ${warns[member.id].count}`);
+  }
+
+  // ===== Check Warnings =====
+  if (command === "sgwarnings") {
+    const member = message.mentions.members.first() || message.member;
+    if (!warns[member.id]) return message.reply(`${member.user.tag} has no warnings.`);
+    const userWarns = warns[member.id];
+    let text = `${member.user.tag} has ${userWarns.count} warning(s):\n`;
+    userWarns.reasons.forEach((r, i) => {
+      text += `${i+1}. ${r}\n`;
+    });
+    return message.reply(text);
+  }
+});
   
 }); // end messageCreate
 
