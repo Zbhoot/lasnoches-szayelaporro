@@ -369,7 +369,7 @@ Congratulations ${winner} for winning **${prize}**!`);
   }, duration);
 }
 
-  if (command === "reroll") {
+if (command === "reroll") {
   if (message.author.id !== OWNER_ID) return;
 
   const messageId = args[0];
@@ -378,18 +378,18 @@ Congratulations ${winner} for winning **${prize}**!`);
   try {
     const giveawayMsg = await message.channel.messages.fetch(messageId);
 
-    const reactions = giveawayMsg.reactions.cache;
-    const reaction = reactions.find(r => r.emoji.name === ":tada:");
+    // Force fetch reactions
+    const reactions = await giveawayMsg.reactions.fetch();
+    const reaction = reactions.get(":tada:");
 
     if (!reaction) return message.reply("No giveaway reactions found.");
 
     const users = await reaction.users.fetch();
-    const validUsers = users.filter(u => !u.bot).map(u => u.id);
+    const validUsers = users.filter(u => !u.bot);
 
-    if (validUsers.length === 0) return message.reply("No valid participants.");
+    if (validUsers.size === 0) return message.reply("No valid participants.");
 
-    const winnerId = validUsers[Math.floor(Math.random() * validUsers.length)];
-    const winner = `<@${winnerId}>`;
+    const winner = validUsers.random();
 
     const announceChannel = await client.channels.fetch("1478459705113313472");
 
