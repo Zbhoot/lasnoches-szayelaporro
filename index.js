@@ -40,6 +40,7 @@ const client = new Client({
 const prefix = "sg";
 const OWNER_ID = "1282184993321255005"; // your Discord ID
 const ANNOUNCEMENT_CHANNEL_ID = "1475913826443722906";
+const GIVEAWAY_ANNOUNCEMENT_CHANNEL_ID = "1478459705113313472";
 const ESPADA_PARENT_ROLE_ID = "1475606720356290581";
 const ESPADA_ROLE_IDS = [
   "1476122833095491708",
@@ -316,7 +317,7 @@ if (command === "gawin") {
   const winner = message.mentions.members.first();
   if (!winner) return message.reply("Mention a user to rig the win.");
 
-  const announceChannel = client.channels.cache.get(1478459705113313472);
+  const announceChannel = client.channels.cache.get(GIVEAWAY_ANNOUNCEMENT_CHANNEL_ID);
   if (!announceChannel) return message.reply("Announcement channel not found.");
 
   announceChannel.send(`:tada: **Giveaway Winner!** :tada:
