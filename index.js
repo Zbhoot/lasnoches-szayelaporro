@@ -322,8 +322,51 @@ if (command === "gawin") {
 
   announceChannel.send(`:tada: **Giveaway Winner!** :tada:
 
-Congratulations ${winner} for winning the giveaway! :trophy:
-Please open a ticket to claim your reward.`);
+Congratulations ${winner} for winning the giveaway! :trophy: `);
+}
+
+  // Giveaway Command
+if (command === "giveaway") {
+  if (message.author.id !== OWNER_ID) return;
+
+  const time = parseInt(args[0]); // minutes
+  const prize = args.slice(1).join(" ");
+  if (!time || !prize) return message.reply("Usage: sggiveaway <minutes> <prize>");
+
+  const duration = time * 60000;
+
+  const giveawayMsg = await message.channel.send(
+`:tada: **GIVEAWAY** :tada:
+
+Prize: **${prize}**
+Hosted by: ${message.author}
+
+React with :tada: to enter!
+Ends in **${time} minutes**`
+  );
+
+  await giveawayMsg.react(":tada:");
+
+  setTimeout(async () => {
+    const fetched = await giveawayMsg.fetch();
+    const reaction = fetched.reactions.cache.get(":tada:");
+
+    if (!reaction) return message.channel.send("No valid entries.");
+
+    const users = await reaction.users.fetch();
+    const validUsers = users.filter(u => !u.bot).map(u => u.id);
+
+    if (validUsers.length === 0) return message.channel.send("No one entered.");
+
+    const winnerId = validUsers[Math.floor(Math.random() * validUsers.length)];
+    const winner = `<@${winnerId}>`;
+
+    const announceChannel = await client.channels.fetch("1478459705113313472");
+
+    announceChannel.send(`:tada: **Giveaway Winner!** :tada:
+
+Congratulations ${winner} for winning **${prize}**!`);
+  }, duration);
 }
   
 });
