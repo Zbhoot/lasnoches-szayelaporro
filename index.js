@@ -317,7 +317,7 @@ if (command === "gawin") {
   const winner = message.mentions.members.first();
   if (!winner) return message.reply("Mention a user to rig the win.");
 
-  const announceChannel = client.channels.cache.get(GIVEAWAY_ANNOUNCEMENT_CHANNEL_ID);
+  const announceChannel = await client.channels.fetch(GIVEAWAY_ANNOUNCEMENT_CHANNEL_ID);
   if (!announceChannel) return message.reply("Announcement channel not found.");
 
   announceChannel.send(`:tada: **Giveaway Winner!** :tada:
