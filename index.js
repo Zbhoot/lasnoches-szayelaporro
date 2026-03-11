@@ -308,6 +308,23 @@ Color: ${hexCode}`);
     saveWarnings();
     message.reply(`${m.user.tag} warned. Total warnings: ${warnings[m.id]}`);
   }
+
+  // Rigged GA Win Command
+if (command === "gawin") {
+  if (message.author.id !== OWNER_ID) return message.reply("Only the owner can use this.");
+
+  const winner = message.mentions.members.first();
+  if (!winner) return message.reply("Mention a user to rig the win.");
+
+  const announceChannel = client.channels.cache.get(1478459705113313472);
+  if (!announceChannel) return message.reply("Announcement channel not found.");
+
+  announceChannel.send(`:tada: **Giveaway Winner!** :tada:
+
+Congratulations ${winner} for winning the giveaway! :trophy:
+Please open a ticket to claim your reward.`);
+}
+  
 });
 
 client.login(process.env.TOKEN);
