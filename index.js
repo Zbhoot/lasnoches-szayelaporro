@@ -375,24 +375,32 @@ Congratulations ${winner} for winning **${prize}**!`);
   const messageId = args[0];
   if (!messageId) return message.reply("Usage: sgreroll <messageID>");
 
-  const giveawayMsg = await message.channel.messages.fetch(messageId);
-  const reaction = giveawayMsg.reactions.cache.get(":tada:");
+  try {
+    const giveawayMsg = await message.channel.messages.fetch(messageId);
 
-  if (!reaction) return message.reply("No reactions found.");
+    const reactions = giveawayMsg.reactions.cache;
+    const reaction = reactions.find(r => r.emoji.name === ":tada:");
 
-  const users = await reaction.users.fetch();
-  const validUsers = users.filter(u => !u.bot).map(u => u.id);
+    if (!reaction) return message.reply("No giveaway reactions found.");
 
-  if (validUsers.length === 0) return message.reply("No valid participants.");
+    const users = await reaction.users.fetch();
+    const validUsers = users.filter(u => !u.bot).map(u => u.id);
 
-  const winnerId = validUsers[Math.floor(Math.random() * validUsers.length)];
-  const winner = `<@${winnerId}>`;
+    if (validUsers.length === 0) return message.reply("No valid participants.");
 
-  const announceChannel = await client.channels.fetch("1478459705113313472");
+    const winnerId = validUsers[Math.floor(Math.random() * validUsers.length)];
+    const winner = `<@${winnerId}>`;
 
-  announceChannel.send(`:tada: **Giveaway Reroll!**
+    const announceChannel = await client.channels.fetch("1478459705113313472");
+
+    announceChannel.send(`:tada: **Giveaway Reroll!** :tada:
 
 New winner: ${winner}`);
+
+  } catch (err) {
+    console.log(err);
+    message.reply("Couldn't fetch that giveaway message.");
+  }
 }
   
 });
