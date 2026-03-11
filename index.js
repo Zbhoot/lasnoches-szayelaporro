@@ -368,6 +368,32 @@ Ends in **${time} minutes**`
 Congratulations ${winner} for winning **${prize}**!`);
   }, duration);
 }
+
+  if (command === "reroll") {
+  if (message.author.id !== OWNER_ID) return;
+
+  const messageId = args[0];
+  if (!messageId) return message.reply("Usage: sgreroll <messageID>");
+
+  const giveawayMsg = await message.channel.messages.fetch(messageId);
+  const reaction = giveawayMsg.reactions.cache.get(":tada:");
+
+  if (!reaction) return message.reply("No reactions found.");
+
+  const users = await reaction.users.fetch();
+  const validUsers = users.filter(u => !u.bot).map(u => u.id);
+
+  if (validUsers.length === 0) return message.reply("No valid participants.");
+
+  const winnerId = validUsers[Math.floor(Math.random() * validUsers.length)];
+  const winner = `<@${winnerId}>`;
+
+  const announceChannel = await client.channels.fetch("1478459705113313472");
+
+  announceChannel.send(`:tada: **Giveaway Reroll!**
+
+New winner: ${winner}`);
+}
   
 });
 
